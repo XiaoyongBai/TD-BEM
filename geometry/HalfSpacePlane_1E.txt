@@ -1,0 +1,38 @@
+numstep=100;
+dt=5e-3;
+interpolation=5;
+nq=6;
+
+E=5e7;
+nu=0.25;
+density=1730;
+
+sd=3;
+nnd=4;
+if_ext=1;
+EType=1;
+nel=1;
+
+nodes=
+   0.00000   0.00000   0.0000
+   1.0	     0.0       0.0
+   1.0       1.0       0.0
+   0.0       1.0       0.0
+
+IEN=
+   1   2   3   4
+
+
+UBC_num=0;
+UBC_dof=
+
+UBC_values=
+
+
+FBC_num=4;
+
+FBC_dof=
+	3,6,9,12
+
+FBC_values=
+	1.0, 1.0, 1.0, 1.0
