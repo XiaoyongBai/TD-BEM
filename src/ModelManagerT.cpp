@@ -413,11 +413,6 @@ void ModelManagerT::ReadInput(const char* name)
 }
 
 
-
-
-
-
-
 int ModelManagerT::GetNumInterface(void)
 {
 	return fNumInterface;

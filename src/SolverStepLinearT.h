@@ -24,13 +24,13 @@ public:
 
 	virtual void UpdateGHLinear(const double* G_0, const double* G_1, const double* H_0, const double* H_1);
 
-	virtual void Solve();
+	virtual void Solve(double a1, double a2);
 
 	/**
 	 * @Function=solve with linear time interpolation
 	 */
 	void Solve_Direct(void);
-	void Solve_Averaging();
+	void Solve_Averaging(double a1, double a2);
 
 
 	virtual void RecordResult(void);

@@ -45,11 +45,13 @@ void SolverStepLinearT::Initialize()
 	//MathOperationT::PrintVector(FBC_num, FBC_DOFs, "FBC_DOFs");
 	//MathOperationT::PrintVector(FBC_num, FBC_Values, "FBC_Values");
 
-	fIerr=VecSetValues(fTrac_DB[0], FBC_num, FBC_DOFs, FBC_Values, INSERT_VALUES);
-
+	//fIerr=VecSetValues(fTrac_DB[0], FBC_num, FBC_DOFs, FBC_Values, INSERT_VALUES);
+    
+    VecSet(fTrac_DB[0], 0);
 	fIerr=VecAssemblyBegin(fTrac_DB[0]);
 	fIerr=VecAssemblyEnd(fTrac_DB[0]);
 
+    
 	//VecView(fTrac_DB[0], PETSC_VIEWER_STDOUT_WORLD);
 }
 
@@ -63,62 +65,6 @@ void SolverStepLinearT::UpdateGHLinear(const double* G_0, const double* G_1, con
 	 *************/
 	if (fCurrStep<=fMaxStep)
 	{
-        //Print the matrices
-        string G1_file, G2_file, H1_file, H2_file;
-        
-        ostringstream convert_G1, convert_G2, convert_H1, convert_H2; // stream used for the conversion
-        
-        int rank;
-        MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-        
-        convert_G1 << "G1_step" <<fCurrStep-1<<"_p_"<<rank<<".txt";
-        G1_file=convert_G1.str();
-        convert_G2 << "G2_step" <<fCurrStep-1<<"_p_"<<rank<<".txt";
-        G2_file=convert_G2.str();
-        convert_H1 << "H1_step" <<fCurrStep-1<<"_p_"<<rank<<".txt";
-        H1_file=convert_H1.str();
-        convert_H2 << "H2_step" <<fCurrStep-1<<"_p_"<<rank<<".txt";
-        H2_file=convert_H2.str();
-        
-        ofstream G1_write, G2_write, H1_write, H2_write;
-        
-        G1_write.open(G1_file.c_str(), ios_base::out);
-        for (int i=0; i<fLocNumDof; i++) {
-            for (int j=0; j<fGblNumDof; j++) {
-                G1_write<< setw(15) << setprecision(5) << std::scientific<<G_1[i*fGblNumDof+j];
-            }
-            G1_write<<endl;
-        }
-        G1_write.close();
-        
-        G2_write.open(G2_file.c_str(), ios_base::out);
-        for (int i=0; i<fLocNumDof; i++) {
-            for (int j=0; j<fGblNumDof; j++) {
-                G2_write<< setw(15) << setprecision(5) << std::scientific<<G_0[i*fGblNumDof+j];
-            }
-            G2_write<<endl;
-        }
-        G2_write.close();
-        
-        H1_write.open(H1_file.c_str(), ios_base::out);
-        for (int i=0; i<fLocNumDof; i++) {
-            for (int j=0; j<fGblNumDof; j++) {
-                H1_write<< setw(15) << setprecision(5) << std::scientific<<H_1[i*fGblNumDof+j];
-            }
-            G1_write<<endl;
-        }
-        G1_write.close();
-        
-        H2_write.open(H2_file.c_str(), ios_base::out);
-        for (int i=0; i<fLocNumDof; i++) {
-            for (int j=0; j<fGblNumDof; j++) {
-                H2_write<< setw(15) << setprecision(5) << std::scientific<<H_0[i*fGblNumDof+j];
-            }
-            H2_write<<endl;
-        }
-        H2_write.close();
-        
-
 		if(fCurrStep==1)
 		{
 			fIerr=MatSetValues(fG_DB[0], fLocNumDof, fIndexRow, fGblNumDof, fIndexCol, G_1, INSERT_VALUES);
@@ -230,9 +176,9 @@ void SolverStepLinearT::UpdateGHLinear(const double* G_0, const double* G_1, con
 }
 
 
-void SolverStepLinearT::Solve()
+void SolverStepLinearT::Solve(double a1, double a2)
 {
-	Solve_Averaging();
+	Solve_Averaging(a1, a2);
 	//Solve_Direct();
 }
 
@@ -367,8 +313,17 @@ void SolverStepLinearT::Solve_Direct()
 
 
 
-void SolverStepLinearT::Solve_Averaging()
+void SolverStepLinearT::Solve_Averaging(double a1, double a2)
 {
+    double a3;
+    if (a1>=0 && a1<=1 && a2>=0 && a2<1 && a1+a2<=1) {
+        a3=1-a1-a2;
+    }else{
+        cout <<"alpha_1="<<a1 <<" alpha_2=" << a2 <<endl;
+        throw "Alpha is out of range";
+    }
+    
+    
 	int UBC_num;
 	int* UBC_DOFs;
 	double* UBC_Values;
@@ -378,18 +333,8 @@ void SolverStepLinearT::Solve_Averaging()
 
 	fModel->BoundaryCondition_Local(UBC_num, &UBC_DOFs, &UBC_Values, FBC_num, &FBC_DOFs, &FBC_Values);
 
-	//if(fCurrStep>30)
-	//{
-		//fIerr=VecZeroEntries(fLoad);
-
-		//MathOperationT::VecSet(FBC_num, FBC_Values, 0);
-	//}
-
-	double p0=5.46366e9;
-	double curr_time=(fCurrStep-1)*fDt;
-	double amp=p0*curr_time*exp(-2000*curr_time);
-
-	amp=1;
+    double curr_time=(fCurrStep-1)*fDt;
+    double amp=LoadTimeVariation(curr_time);
 
 	double* FBC_Values_temp=new double[FBC_num];
 	MathOperationT::MemCopy(FBC_num, FBC_Values, FBC_Values_temp);
@@ -402,8 +347,7 @@ void SolverStepLinearT::Solve_Averaging()
 	//MathOperationT::PrintVector(FBC_num, FBC_Values, "solver FBC_values");
 
     int solve_step=fCurrStep-1;
-
-
+    
 	if(fCurrStep==1)
 	{
 		//do nothing
@@ -442,11 +386,11 @@ void SolverStepLinearT::Solve_Averaging()
 		fIerr=MatZeroEntries(fG_Compute);
 		fIerr=MatZeroEntries(fH_Compute);
 
-		fIerr=MatAXPY(fG_Compute, 4, fG_DB[0],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatAXPY(fG_Compute, 1, fG_DB[1],DIFFERENT_NONZERO_PATTERN);
+		fIerr=MatAXPY(fG_Compute, 2*a1+a3, fG_DB[0],DIFFERENT_NONZERO_PATTERN);
+		fIerr=MatAXPY(fG_Compute, a1, fG_DB[1],DIFFERENT_NONZERO_PATTERN);
 
-		fIerr=MatAXPY(fH_Compute, 4, fH_DB[0],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatAXPY(fH_Compute, 1, fH_DB[1],DIFFERENT_NONZERO_PATTERN);
+		fIerr=MatAXPY(fH_Compute, 2*a1+a3, fH_DB[0],DIFFERENT_NONZERO_PATTERN);
+		fIerr=MatAXPY(fH_Compute, a1, fH_DB[1],DIFFERENT_NONZERO_PATTERN);
 
 		ExchangeColumns();
 
@@ -460,74 +404,87 @@ void SolverStepLinearT::Solve_Averaging()
 		//MatView(fG_Compute, PETSC_VIEWER_STDOUT_WORLD);
 		//VecView(fLoad, PETSC_VIEWER_STDOUT_WORLD);
 
+        Mat matrix_temp;
+        fIerr=MatConvert(fH_DB[0], MATSAME, MAT_INITIAL_MATRIX, &matrix_temp);
+        
+		//*** add terms from Eqn M+1
+        fIerr=MatZeroEntries(matrix_temp);
+        MatAXPY(matrix_temp, a1, fH_DB[2],DIFFERENT_NONZERO_PATTERN);
+        MatAXPY(matrix_temp, -a1, fH_DB[0],DIFFERENT_NONZERO_PATTERN);
+        MatScale(matrix_temp, -1);
+        MatMultAdd(matrix_temp, fDis_DB[solve_step-1],fRHS, fRHS);
 
-		//**add single terms
-		Mat matrix_temp;
-		fIerr=MatConvert(fG_DB[2], MATSAME, MAT_INITIAL_MATRIX, &matrix_temp);
-		fIerr=MatAXPY(matrix_temp, 2, fG_DB[1],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatMultAdd(matrix_temp, fTrac_DB[solve_step-1],fRHS, fRHS);
-
-		fIerr=MatDestroy(&matrix_temp);
-
-		//MatView(matrix_temp, PETSC_VIEWER_STDOUT_WORLD);
-		//VecView(fRHS, PETSC_VIEWER_STDOUT_WORLD);
-
-		fIerr=MatConvert(fH_DB[2], MATSAME, MAT_INITIAL_MATRIX, &matrix_temp);
-		fIerr=MatAXPY(matrix_temp, 2, fH_DB[1],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatScale(matrix_temp, -1);
-		fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-1],fRHS, fRHS);
-
-
-		//*** add terms by loop
-		for(int f_i=3; f_i<=min(solve_step, fMaxStep); f_i++)
+        fIerr=MatZeroEntries(matrix_temp);
+        MatAXPY(matrix_temp, a1, fG_DB[2],DIFFERENT_NONZERO_PATTERN);
+        MatAXPY(matrix_temp, -a1, fG_DB[0],DIFFERENT_NONZERO_PATTERN);
+        MatMultAdd(matrix_temp, fTrac_DB[solve_step-1],fRHS, fRHS);
+        
+		for(int f_i=3; f_i<=min(solve_step+1, fMaxStep); f_i++)
 		{
+            fIerr=MatZeroEntries(matrix_temp);
+            fIerr=MatAXPY(matrix_temp, a1, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+            fIerr=MatScale(matrix_temp, -1);
+            fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step+1-f_i],fRHS, fRHS);
+            
 			fIerr=MatZeroEntries(matrix_temp);
-			fIerr=MatAXPY(matrix_temp, 1, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+			fIerr=MatAXPY(matrix_temp, a1, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
 			fIerr=MatMultAdd(matrix_temp, fTrac_DB[solve_step+1-f_i],fRHS, fRHS);
-
-			fIerr=MatZeroEntries(matrix_temp);
-			fIerr=MatAXPY(matrix_temp, 1, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
-			fIerr=MatScale(matrix_temp, -1);
-			fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step+1-f_i],fRHS, fRHS);
 		}
 
-		for(int f_i=2; f_i<=min(solve_step-1, fMaxStep); f_i++)
+        //*** add terms from Eqn M
+		for(int f_i=1; f_i<=min(solve_step-1, fMaxStep); f_i++)
 		{
+            fIerr=MatZeroEntries(matrix_temp);
+            fIerr=MatAXPY(matrix_temp, a3, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+            fIerr=MatScale(matrix_temp, -1);
+            fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-f_i],fRHS, fRHS);
+            
 			fIerr=MatZeroEntries(matrix_temp);
-			fIerr=MatAXPY(matrix_temp, 2, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+			fIerr=MatAXPY(matrix_temp, a3, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
 			fIerr=MatMultAdd(matrix_temp, fTrac_DB[solve_step-f_i],fRHS, fRHS);
-
-			fIerr=MatZeroEntries(matrix_temp);
-			fIerr=MatAXPY(matrix_temp, 2, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
-			fIerr=MatScale(matrix_temp, -1);
-			fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-f_i],fRHS, fRHS);
 		}
+        
+        //special treatment to the first step
+        if (solve_step<fMaxStep) {
+            fIerr=MatZeroEntries(matrix_temp);
+            fIerr=MatAXPY(matrix_temp, a3, fH_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
+            fIerr=MatScale(matrix_temp, -1);
+            fIerr=MatMultAdd(matrix_temp, fDis_DB[0],fRHS, fRHS);
+            
+            fIerr=MatZeroEntries(matrix_temp);
+            fIerr=MatAXPY(matrix_temp, a3, fG_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
+            fIerr=MatMultAdd(matrix_temp, fTrac_DB[0],fRHS, fRHS);
+        }
 
-		for(int f_i=1; f_i<=min(solve_step-2, fMaxStep); f_i++)
+        
+
+        //*** add terms from Eqn M-1
+		for(int f_i=0; f_i<=min(solve_step-2, fMaxStep); f_i++)
 		{
+            fIerr=MatZeroEntries(matrix_temp);
+            fIerr=MatAXPY(matrix_temp, a2, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+            fIerr=MatScale(matrix_temp, -1);
+            fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-1-f_i],fRHS, fRHS);
+            
 			fIerr=MatZeroEntries(matrix_temp);
-			fIerr=MatAXPY(matrix_temp, 1, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+			fIerr=MatAXPY(matrix_temp, a2, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
 			fIerr=MatMultAdd(matrix_temp, fTrac_DB[solve_step-1-f_i],fRHS, fRHS);
-
-			fIerr=MatZeroEntries(matrix_temp);
-			fIerr=MatAXPY(matrix_temp, 1, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
-			fIerr=MatScale(matrix_temp, -1);
-			fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-1-f_i],fRHS, fRHS);
 		}
 
-		//** special treatment to the first step
-		fIerr=MatZeroEntries(matrix_temp);
-		fIerr=MatAXPY(matrix_temp, 1, fG_DB_bgn[0],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatAXPY(matrix_temp, 2, fG_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatAXPY(matrix_temp, 1, fG_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatMultAdd(matrix_temp, fTrac_DB[0],fRHS, fRHS);
+		// special treatment to the first step
+        if (solve_step-1<fMaxStep) {
+            fIerr=MatZeroEntries(matrix_temp);
+            fIerr=MatAXPY(matrix_temp, a2, fH_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
+            fIerr=MatScale(matrix_temp, -1);
+            fIerr=MatMultAdd(matrix_temp, fDis_DB[0],fRHS, fRHS);
+            
+            fIerr=MatZeroEntries(matrix_temp);
+            fIerr=MatAXPY(matrix_temp, a2, fG_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
+            fIerr=MatMultAdd(matrix_temp, fTrac_DB[0],fRHS, fRHS);
+        }
 
-		fIerr=MatZeroEntries(matrix_temp);
-		fIerr=MatAXPY(matrix_temp, 1, fH_DB_bgn[0],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatAXPY(matrix_temp, 2, fH_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatAXPY(matrix_temp, 1, fH_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
-		fIerr=MatScale(matrix_temp, -1);
-		fIerr=MatMultAdd(matrix_temp, fDis_DB[0],fRHS, fRHS);
+
+
 
 		fIerr=MatDestroy(&matrix_temp);
 	}
@@ -610,12 +567,13 @@ void SolverStepLinearT::RecordResult()
 
 	if(fRank==0)
 	{
-		if (fCurrStep==1)
-			myfile.open("displacement.txt", fstream::out|fstream::trunc);
-		else
-			myfile.open("displacement.txt", fstream::out|fstream::app);
-
-
+        if (fCurrStep==1){
+            myfile.open("displacement.txt", fstream::out|fstream::trunc);
+            myfile<<setw(10)<<"%time" <<setw(15)<<"load"<<setw(15)<<"displacement" <<setw(15)<<"traction"<<endl;
+        }else{
+            myfile.open("displacement.txt", fstream::out|fstream::app);
+        }
+			
 		double* temp_dis,* temp_trac;
 
 		fIerr=VecGetArray(dis_collection, &temp_dis);
@@ -624,7 +582,9 @@ void SolverStepLinearT::RecordResult()
 		myfile<<setprecision(6);
 		//myfile<< setw(10) << fDt*si << setw(15) << temp[261*3-1] << setw(15) << temp[22*3-1] << setw(15) << temp[442*3-1]  << setw(15) << temp[499*3-1]  << endl;
 		//myfile<<setw(10) << fDt*(fCurrStep-1) << setw(15) << temp[107] << endl;
-		myfile<<setw(10) << fDt*(fCurrStep-1) << setw(15) << temp_dis[77] << setw(15) << temp_trac[2]<< endl;
+        double time=fDt*(fCurrStep-1);
+        double amp=LoadTimeVariation(time);
+        myfile<<setw(10) <<  time << setw(15) << amp <<setw(15) << temp_dis[6] << setw(15) << temp_trac[2]<< endl;
 
 		/**for buried cavity Jiang **/
 		//myfile<< setw(10) << fDt*(fCurrStep-1) << setw(15) << temp[261*3-1] << setw(15) << temp[413*3-1] << setw(15) << temp[442*3-1]  << setw(15) << temp[591*3-1]  << endl;
@@ -647,5 +607,5 @@ void SolverStepLinearT::RecordResult()
 	VecDestroy(&dis_collection);
 
 	//OutPutTecPlot();
-	OutPutVTK();
+	//OutPutVTK();
 }

@@ -525,8 +525,6 @@ void GreenFunctionT::Stokes_CubicBSpline(double* U, double* T, double t)
 	double I1, Dis_I2, Dis_I3;
 	double T_I2, T_I3, T_I4, T_I5;
 
-	double k=fRampingSlope;
-
 	CubicB1(GC1, DGC1, t-fR/fCp, fBWidth);
 	CubicB1(GC2, DGC2, t-fR/fCs, fBWidth);
 

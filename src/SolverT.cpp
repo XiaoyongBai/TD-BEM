@@ -14,6 +14,7 @@
 
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 using namespace TD_BEM;
@@ -44,6 +45,8 @@ SolverT::SolverT(ModelManagerT* model)
 	fDt=model->GetDT();
 	fNumStep=model->GetNumStep();
 
+    ComputeMaxStep();
+    
 	cout<<"Solver is constructed\n";
 }
 
@@ -201,9 +204,54 @@ void SolverT::SetCurrStep(int curr_step)
 	fCurrStep=curr_step;
 }
 
-void SolverT::SetMaxStep(int MaxStep)
+/**
+ * Determine the maximum number of G and H needed to be computed.
+ * MaxStep=MaxDistance/Cs.
+*/
+void SolverT::ComputeMaxStep(void)
 {
-	fMaxStep=MaxStep;
+    double E, nu, rho;
+    fModel->GetMaterialConstants(E, nu, rho);
+    
+    double Mu=E/(2.0*(1.0+nu));
+    double Cs=sqrt(Mu/rho);
+    
+    double nnd=fModel->GetNND();
+    const double* nodes=fModel->GetCoords();
+    
+    double max_dis=0; //maximum distance between any two nodes
+    
+    double node_1[3], node_2[3];
+    for (int i=0; i<nnd-1; i++) {
+        
+        node_1[0]=nodes[i*3+0];
+        node_1[1]=nodes[i*3+1];
+        node_1[2]=nodes[i*3+2];
+        
+        for (int j=i+1; j<nnd; j++) {
+            node_2[0]=nodes[j*3+0];
+            node_2[1]=nodes[j*3+1];
+            node_2[2]=nodes[j*3+2];
+            
+            double temp=0;
+            for (int d=0; d<3; d++) {
+                temp+=pow(node_1[d]-node_2[d], 2);
+            }
+            temp=sqrt(temp);
+            
+            if (temp > max_dis) {
+                max_dis=temp;
+            }
+        }
+    }
+    
+    
+    fMaxStep=ceil(max_dis/(Cs*fDt))+1;
+}
+
+int SolverT::GetMaxStep()
+{
+    return fMaxStep;
 }
 
 
@@ -305,12 +353,9 @@ void SolverT::SetLoad()
 	fModel->BoundaryCondition_Local(UBC_num, &UBC_DOFs, &UBC_Values, FBC_num, &FBC_DOFs, &FBC_Values);
 
 	//****************************************
-	double p0=5.46366e9;
 	double curr_time=(fCurrStep-1)*fDt;
-	double amp=p0*curr_time*exp(-2000*curr_time);
-
-	amp=1;
-
+    double amp=LoadTimeVariation(curr_time);
+    
 	double* FBC_Values_temp=new double[FBC_num];
 	MathOperationT::MemCopy(FBC_num, FBC_Values, FBC_Values_temp);
 
@@ -330,6 +375,24 @@ void SolverT::SetLoad()
 
 	delete[] FBC_Values_temp;
 }
+
+double SolverT::LoadTimeVariation(double t)
+{
+    double amp=1.0;
+    
+    //half-sine load
+    double period=0.02; //period of the sin function
+    
+    if (t<=period/2.0) {
+        amp=sin(2.0*M_PI*t/period);
+    }
+    
+    //Heaviside load
+    amp=1.0;
+    
+    return amp;
+}
+
 
 
 void SolverT::GetNodeLowHigh(int* low, int* high)
@@ -408,7 +471,6 @@ void SolverT::OutPutTecPlot()
 
 	}
 
-
 	fIerr=VecRestoreArray(dis_collection, &temp);
 
 	VecScatterDestroy(&ctx);
@@ -416,8 +478,21 @@ void SolverT::OutPutTecPlot()
 }
 
 
-
 void SolverT::OutPutVTK()
+{
+    int ele_type=fModel->GetElementType();
+    
+    if (ele_type==1) {
+        OutPutVTK_Linear();
+    }else if (ele_type==2){
+        OutPutVTK_Quadratic();
+    }else{
+        throw "SolverT::OutPutVTK, unsupported element type";
+    }
+}
+
+
+void SolverT::OutPutVTK_Linear()
 {
 	ofstream myfile;
 
@@ -495,10 +570,30 @@ void SolverT::OutPutVTK()
 
 
 		myfile.close();
-
 	}
+    
+    VecScatterDestroy(&ctx);
+    VecDestroy(&dis_collection);
+}
 
-/*    if(fRank==0)
+void SolverT::OutPutVTK_Quadratic()
+{
+    ofstream myfile;
+    
+    Vec dis_collection;
+    VecScatter ctx;
+    
+    VecScatterCreateToAll(fDis_DB[fCurrStep-1],&ctx,&dis_collection);
+    VecScatterBegin(ctx,fDis_DB[fCurrStep-1],dis_collection,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,fDis_DB[fCurrStep-1],dis_collection,INSERT_VALUES,SCATTER_FORWARD);
+    
+    int nnd=fModel->GetNND();
+    int nel=fModel->GetNEL();
+    
+    const int* IEN=fModel->GetIEN();
+    const double* Coords=fModel->GetCoords();
+    
+    if(fRank==0)
     {
         string filename="BEM_result_";
         
@@ -560,29 +655,99 @@ void SolverT::OutPutVTK()
         myfile.close();
         
     }
-*/
+
 	VecScatterDestroy(&ctx);
 	VecDestroy(&dis_collection);
 }
 
 
-void SolverT::OutPutHMatrix()
+/***********************************************************************************************
+ * Objective : This function write one global G or H matrices for the later usage,  namely,
+ *             the eigenvalue analysis or other computations
+ * Step 1: each processor write its local G or H
+ * Step 2: The root processor read all the G or H, emerge them and delete them
+ ***********************************************************************************************/
+void SolverT::WriteGH(const char* name_prefix, int step, int num_row, int num_column, double* data, int comm_size, int comm_rank)
 {
-    string filename="HMatrix";
+    //All processor write the matrices simutaneously
+    string file_name;
+    ostringstream converter;
+    converter << name_prefix << step <<"_p_"<< comm_rank<<".txt";
+    file_name=converter.str();
     
-    ostringstream oo;
-    oo<<fCurrStep;
-    filename+=oo.str();
+    ofstream file_writer;
+    file_writer.open(file_name.c_str(), ios_base::out);
+    file_writer << num_row << " "<<num_column <<endl;
+    for (int i=0; i<num_row; i++) {
+        for (int j=0; j<num_column; j++) {
+            file_writer<< setw(15) << setprecision(5) << std::scientific<<data[i*fGblNumDof+j];
+        }
+        file_writer<<endl;
+    }
+    file_writer.close();
     
-    filename+=".txt";
+    //rank 0 merges all the matrices
+    string global_file;
+    ostringstream global_converter;
+    global_converter << name_prefix << step <<".txt";
+    global_file=global_converter.str();
     
-    const char* name=filename.c_str();
+    ofstream global_writer;
+    global_writer.open(global_file.c_str(), ios_base::out);
+
+    MPI_Barrier(fComm);
     
-    PetscViewer viewer;
+    if (comm_rank==0) {
+        for (int ri=0; ri<comm_size; ri++) {
+            string read_name;
+            ostringstream read_converter;
+            read_converter << name_prefix << step << "_p_" << ri <<".txt";
+            read_name=read_converter.str();
+            
+            ifstream file_reader;
+            file_reader.open(read_name.c_str(), ios_base::in);
+            
+            int nr, nc; //number of rows, columns
+            file_reader >> nr;
+            file_reader >> nc;
+            
+            for (int i=0; i<nr; i++) {
+                for (int j=0; j<nc; j++) {
+                    double temp;
+                    file_reader>>temp;
+                    global_writer<< setw(15) << setprecision(5) << std::scientific<<temp;
+                }
+                global_writer << endl;
+            }
+            
+            file_reader.close();
+            
+            std::remove(read_name.c_str());
+        }
+    }
     
-    PetscViewerASCIIOpen(PETSC_COMM_WORLD, name, &viewer);
-    MatView(fH_DB[0], viewer);
-    PetscViewerDestroy(&viewer);
+    global_writer.close();
+    
+    MPI_Barrier(fComm);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

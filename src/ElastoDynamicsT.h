@@ -22,21 +22,9 @@ public:
 	ElastoDynamicsT(ModelManagerT* Model);
 	~ElastoDynamicsT();
 
-	/**
-	 * @Function=set fLower and fUpper */
-	void SetLowerUpper(int Lower, int upper);
+    void SetLowerUpper(int Lower, int upper);
 
-	/**
-	 * @Function=drive to formulate G and H matrices, for linear interpolation
-	 */
 	void G_H_Driver(double t, double t_1);
-
-
-	/**
-	 * @Function=form the B matrix, when solve half space problem with full space Green's function
-	 */
-	void FormGeomBMatrix(void);
-
 
 	/**
 	 * @Function=Assemble element G and H into global matrix
@@ -50,9 +38,6 @@ public:
 
 	void GetGHLinear(double** G_1, double** G_2, double** H_1, double** H_2);
 
-	//void GetGHLinear(double** G_1, double** G_2, double** H_1, double** H_2);
-
-
 private:
 	/**
 	 * fModel=the model manager that contains information of mesh
@@ -63,8 +48,6 @@ private:
 	ModelManagerT* fModel;
 	TDElementT* fElement;
 
-
-
 	int fLower, fUpper;
 
 	double* fG_1;
@@ -72,9 +55,6 @@ private:
 
 	double* fH_1;
 	double* fH_2;
-
-	double* fGeometry_B;
-
 };
 
 } /* name space */

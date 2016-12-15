@@ -33,8 +33,8 @@ public:
 
 	void SetCurrStep(int curr_step);
 
-	void SetMaxStep(int MaxStep);
-
+	void ComputeMaxStep(void);
+    int GetMaxStep(void);
 	/**
 	 * @Function=update the matrices for linear time interpolation
 	 */
@@ -42,7 +42,7 @@ public:
 
 
 
-	virtual void Solve()=0;
+	virtual void Solve(double a1, double a2)=0;
 
 	/**
 	 * @Function=change columns of fG_Compute and fH_Compute (columns corresponding to fixed displacement dofs)
@@ -53,6 +53,7 @@ public:
 	 * @Function=set fLoad
 	 */
 	void SetLoad();
+    double LoadTimeVariation(double t);
 
 	void GetNodeLowHigh(int* low, int* high);
 	void GetDofLowHigh(int* low, int* high);
@@ -61,10 +62,11 @@ public:
 
 	virtual void OutPutTecPlot(void);
 
-	virtual void OutPutVTK(void);
+    virtual void OutPutVTK(void);
+	virtual void OutPutVTK_Linear(void);
+    virtual void OutPutVTK_Quadratic(void);
     
-    virtual void OutPutHMatrix(void);
-
+    void WriteGH(const char* name_prefix, int step, int num_row, int num_column, double* data, int comm_size, int comm_rank);
 protected:
 
 	ModelManagerT* fModel;
