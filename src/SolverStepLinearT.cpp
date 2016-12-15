@@ -580,12 +580,16 @@ void SolverStepLinearT::RecordResult()
 		fIerr=VecGetArray(trac_collection, &temp_trac);
 	
 		myfile<<setprecision(6);
-		//myfile<< setw(10) << fDt*si << setw(15) << temp[261*3-1] << setw(15) << temp[22*3-1] << setw(15) << temp[442*3-1]  << setw(15) << temp[499*3-1]  << endl;
-		//myfile<<setw(10) << fDt*(fCurrStep-1) << setw(15) << temp[107] << endl;
+
         double time=fDt*(fCurrStep-1);
         double amp=LoadTimeVariation(time);
+        
+        //for Bar 1
         myfile<<setw(10) <<  time << setw(15) << amp <<setw(15) << temp_dis[6] << setw(15) << temp_trac[2]<< endl;
 
+        //for Bar 5_5_20
+        //myfile<<setw(10) <<  time << setw(15) << amp <<setw(15) << temp_dis[77] << setw(15) << temp_trac[2]<< endl;
+   
 		/**for buried cavity Jiang **/
 		//myfile<< setw(10) << fDt*(fCurrStep-1) << setw(15) << temp[261*3-1] << setw(15) << temp[413*3-1] << setw(15) << temp[442*3-1]  << setw(15) << temp[591*3-1]  << endl;
 

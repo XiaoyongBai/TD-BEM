@@ -78,6 +78,18 @@ int main(int argc, char **args)
 
 			double t_curr, t_1;
 
+            double a1, a2;
+            ifstream alpha_reader;
+            alpha_reader.open("alpha.txt");
+            alpha_reader>>a1>>a2;
+            alpha_reader.close();
+            
+            if (rank==0) {
+                cout <<"***********************************" <<endl;
+                cout <<"alpha_1="<<a1<<"  alpha_2="<<a2<<endl;
+                cout <<"***********************************" <<endl;
+            }
+            
 			for (int curr_step=1; curr_step<=num_step; curr_step++)
 			{
 				t_curr=curr_step*time_step;
@@ -112,10 +124,7 @@ int main(int argc, char **args)
                 
 				solver->UpdateGHLinear(G_0, G_1, H_0, H_1);
 
-				solver->SetLoad();
-
-                double a1=0.5;
-                double a2=0.0;
+                solver->SetLoad();
                 
 				solver->Solve(a1, a2);
 
