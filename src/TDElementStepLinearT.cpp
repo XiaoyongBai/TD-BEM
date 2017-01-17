@@ -171,7 +171,7 @@ void TDElementStepLinearT::FormGH_Singular(int singular)
 
 			//MathOperationT::PrintMatrix(sd, ennd*sd, GE_1, "GE_1");
 
-			AssembleSubElement(fSubIDs[se_i], GE_1, GE_2, HE_1, HE_2);
+			AssembleSubElement(fSubIDs[se_i], GE_1, GE_2, HE_1, HE_2, C_1, C_2);
 		}
 
 		delete[] GE_1;
@@ -501,7 +501,7 @@ void TDElementStepLinearT::FormGH_Singular_1(int singular, ShapeFunctionT* Shape
 			if (fT==fT_1)
 			{
 				const double* DT_Kelvin=fGreenFunction->GetKelvinLinear();
-		double DT_Kelvin_T[9];
+                double DT_Kelvin_T[9];
                 MathOperationT::transMatrix(3,3, DT_Kelvin, DT_Kelvin_T);
                 MathOperationT::VecPlus(3*3, 1, C_1, -w*J*J_tri, DT_Kelvin_T, C_1);
                 MathOperationT::VecPlus(3*3, 1, C_2, -w*J*J_tri, DT_Kelvin_T, C_2);
@@ -577,7 +577,7 @@ void TDElementStepLinearT::FormGH_Singular_1(int singular, ShapeFunctionT* Shape
 			if (fT==fT_1)
 			{
 				const double* DT_Kelvin=fGreenFunction->GetKelvinLinear();
-		double DT_Kelvin_T[9];
+                double DT_Kelvin_T[9];
                 MathOperationT::transMatrix(3,3, DT_Kelvin, DT_Kelvin_T);
                 MathOperationT::VecPlus(3*3, 1, C_1, -w*J*J_tri, DT_Kelvin_T, C_1);
                 MathOperationT::VecPlus(3*3, 1, C_2, -w*J*J_tri, DT_Kelvin_T, C_2);
@@ -595,7 +595,7 @@ void TDElementStepLinearT::FormGH_Singular_1(int singular, ShapeFunctionT* Shape
 
 
 void TDElementStepLinearT::AssembleSubElement(const int* ids, const double* GE_1, const double* GE_2,
-													const double* HE_1, const double* HE_2)
+                         const double* HE_1, const double* HE_2, const double* C_1, const double* C_2)
 {
 //MathOperationT::PrintVector(4, ids, "ids");
 
@@ -616,6 +616,13 @@ void TDElementStepLinearT::AssembleSubElement(const int* ids, const double* GE_1
 			}
 		}
 	}
+    
+    
+    for(int i=0; i<9; i++)
+    {
+            fC_1[i] += C_1[i];
+            fC_2[i] += C_2[i];
+    }
 }
 
 

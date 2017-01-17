@@ -26,7 +26,7 @@ public:
 
 	void SubElement(int singular);
 
-	void AssembleSubElement(const int* ids, const double* GE_1, const double* GE_2, const double* HE_1, const double* HE_2);
+	void AssembleSubElement(const int* ids, const double* GE_1, const double* GE_2, const double* HE_1, const double* HE_2, const double* C_1, const double* C_2);
 
 
 

@@ -114,10 +114,10 @@ int main(int argc, char **args)
                     int num_row = dof_high-dof_low+1;
                     int num_column = 3*(model->GetNND());
                     
-                    solver->WriteGH("G1_step", curr_step-1, num_row, num_column, G_1, size, rank);
-                    solver->WriteGH("G2_step", curr_step-1, num_row, num_column, G_0, size, rank);
-                    solver->WriteGH("H1_step", curr_step-1, num_row, num_column, H_1, size, rank);
-                    solver->WriteGH("H2_step", curr_step-1, num_row, num_column, H_0, size, rank);
+                    //solver->WriteGH("G1_step", curr_step-1, num_row, num_column, G_1, size, rank);
+                    //solver->WriteGH("G2_step", curr_step-1, num_row, num_column, G_0, size, rank);
+                    //solver->WriteGH("H1_step", curr_step-1, num_row, num_column, H_1, size, rank);
+                    //solver->WriteGH("H2_step", curr_step-1, num_row, num_column, H_0, size, rank);
                 }
                 
                 solver->SetCurrStep(curr_step);
