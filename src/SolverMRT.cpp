@@ -957,8 +957,8 @@ void SolverMRT::SetLoad()
 
 	MathOperationT::VecScale(FBC_num, FBC_Values_temp_1, amp);
 
-//MathOperationT::PrintVector(FBC_num, FBC_Values, "FBC_Values");
-//MathOperationT::PrintVector(FBC_num, FBC_Values_temp_1, "FBC_Values_temp_1");
+	//MathOperationT::PrintVector(FBC_num, FBC_Values, "FBC_Values");
+	//MathOperationT::PrintVector(FBC_num, FBC_Values_temp_1, "FBC_Values_temp_1");
 
 
 	double* load_1=new double[fNumDofs_1];
@@ -1079,7 +1079,7 @@ void SolverMRT::Solve_Direct()
 
 	cout << "current step " << fCurrStep << endl;
 
-    Vec result_rough;
+    	Vec result_rough;
 	fIerr=VecCreateMPI(fComm, PETSC_DECIDE, fNumRow_H, &result_rough);
 
 	fIerr=KSPSetOperators(fKsp, fH_Compute, fH_Compute);
