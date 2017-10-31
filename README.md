@@ -1,5 +1,5 @@
 # TD-BEM #
-Time domain boundary element code for elastodynamics, using Stokes' solution as the Green's function.
+A Parallel C++ Time-Domain Boundary Element code for elastodynamics analysis of solids;
 
 ### External libraries required ###
 MPI for parallel programing;
