@@ -22,7 +22,7 @@ public:
 	ElastoDynamicsT(ModelManagerT* Model);
 	~ElastoDynamicsT();
 
-    void SetLowerUpper(int Lower, int upper);
+    	void SetLowerUpper(int Lower, int upper);
 
 	void G_H_Driver(double t, double t_1);
 
