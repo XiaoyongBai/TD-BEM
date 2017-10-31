@@ -45,14 +45,14 @@ int main(int argc, char **args)
 		model->ReadInput(args[1]);
 
 		SolverT* solver;
-        solver=new SolverStepLinearT(model);
+        	solver=new SolverStepLinearT(model);
 
 		int dof_low, dof_high;
 		solver->GetDofLowHigh(&dof_low, &dof_high);
 		model->Distributed_BC(dof_low, dof_high);
 	
-        int num_step=model->GetNumStep();
-        double time_step=model->GetDT();
+        	int num_step=model->GetNumStep();
+        	double time_step=model->GetDT();
         
 		solver->SetTimeControl(time_step, num_step);
 
@@ -78,53 +78,53 @@ int main(int argc, char **args)
 
 			double t_curr, t_1;
 
-            double a1, a2;
-            ifstream alpha_reader;
-            alpha_reader.open("alpha.txt");
-            alpha_reader>>a1>>a2;
-            alpha_reader.close();
+            		double a1, a2;
+            		ifstream alpha_reader;
+            		alpha_reader.open("alpha.txt");
+            		alpha_reader>>a1>>a2;
+            		alpha_reader.close();
             
-            if (rank==0) {
-                cout <<"***********************************" <<endl;
-                cout <<"alpha_1="<<a1<<"  alpha_2="<<a2<<endl;
-                cout <<"***********************************" <<endl;
-            }
+			if (rank==0) {
+				cout <<"***********************************" <<endl;
+				cout <<"alpha_1="<<a1<<"  alpha_2="<<a2<<endl;
+				cout <<"***********************************" <<endl;
+		 	}
             
 			for (int curr_step=1; curr_step<=num_step; curr_step++)
 			{
 				t_curr=curr_step*time_step;
 				t_1=time_step;
 
-                int MaxStep=solver->GetMaxStep();
-                if(curr_step <=  MaxStep)
+                		int MaxStep=solver->GetMaxStep();
+                		if(curr_step <=  MaxStep)
 				{
 					ED->G_H_Driver(t_curr, t_1);
 				}
 
-                double* G_0;
-                double* G_1;
-                double* H_0;
-                double* H_1;
+				double* G_0;
+				double* G_1;
+				double* H_0;
+				double* H_1;
 
-                ED->GetGHLinear(&G_0, &G_1, &H_0, &H_1);
+				ED->GetGHLinear(&G_0, &G_1, &H_0, &H_1);
 
-                //write the matrices
-                if(curr_step<=MaxStep)
-                {
-                    int num_row = dof_high-dof_low+1;
-                    int num_column = 3*(model->GetNND());
-                    
-                    //solver->WriteGH("G1_step", curr_step-1, num_row, num_column, G_1, size, rank);
-                    //solver->WriteGH("G2_step", curr_step-1, num_row, num_column, G_0, size, rank);
-                    //solver->WriteGH("H1_step", curr_step-1, num_row, num_column, H_1, size, rank);
-                    //solver->WriteGH("H2_step", curr_step-1, num_row, num_column, H_0, size, rank);
-                }
-                
-                solver->SetCurrStep(curr_step);
-                
-				solver->UpdateGHLinear(G_0, G_1, H_0, H_1);
+				//write the matrices
+				if(curr_step<=MaxStep)
+				{
+				    int num_row = dof_high-dof_low+1;
+				    int num_column = 3*(model->GetNND());
 
-                solver->SetLoad();
+				    //solver->WriteGH("G1_step", curr_step-1, num_row, num_column, G_1, size, rank);
+				    //solver->WriteGH("G2_step", curr_step-1, num_row, num_column, G_0, size, rank);
+				    //solver->WriteGH("H1_step", curr_step-1, num_row, num_column, H_1, size, rank);
+				    //solver->WriteGH("H2_step", curr_step-1, num_row, num_column, H_0, size, rank);
+				}
+
+				solver->SetCurrStep(curr_step);
+
+						solver->UpdateGHLinear(G_0, G_1, H_0, H_1);
+
+				solver->SetLoad();
                 
 				solver->Solve(a1, a2);
 
@@ -146,11 +146,12 @@ int main(int argc, char **args)
 
 	PetscFinalize();
 
-    cout << "The computation terminated properly" << endl;
+    	cout << "The computation terminated properly" << endl;
 
-    return 0;
+	return 0;
 
 }
+	
 
 
 
