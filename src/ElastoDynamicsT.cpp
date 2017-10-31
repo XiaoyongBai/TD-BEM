@@ -24,7 +24,7 @@ ElastoDynamicsT::ElastoDynamicsT(ModelManagerT* Model)
 
 	int etype=fModel->GetElementType();
 
-    fElement=new TDElementStepLinearT(etype);
+    	fElement=new TDElementStepLinearT(etype);
 
 	fElement->SetNQ(fModel->GetNQ());
 
@@ -211,17 +211,17 @@ void ElastoDynamicsT::G_H_Driver(double t, double t_1)
 
 		if(fModel->GetIfExt())
 		{
-				if (t==t_1)
-				{
-					Localid=n_i-fLower;
-					fH_1[(Localid*sd+0)*(nnd*sd) + (n_i*sd)+0]+=0.5*t_1;
-					fH_1[(Localid*sd+1)*(nnd*sd) + (n_i*sd)+1]+=0.5*t_1;
-					fH_1[(Localid*sd+2)*(nnd*sd) + (n_i*sd)+2]+=0.5*t_1;
+			if (t==t_1)
+			{
+				Localid=n_i-fLower;
+				fH_1[(Localid*sd+0)*(nnd*sd) + (n_i*sd)+0]+=0.5*t_1;
+				fH_1[(Localid*sd+1)*(nnd*sd) + (n_i*sd)+1]+=0.5*t_1;
+				fH_1[(Localid*sd+2)*(nnd*sd) + (n_i*sd)+2]+=0.5*t_1;
 
-					fH_2[(Localid*sd+0)*(nnd*sd) + (n_i*sd)+0]+=0.5*t_1;
-					fH_2[(Localid*sd+1)*(nnd*sd) + (n_i*sd)+1]+=0.5*t_1;
-					fH_2[(Localid*sd+2)*(nnd*sd) + (n_i*sd)+2]+=0.5*t_1;
-				}
+				fH_2[(Localid*sd+0)*(nnd*sd) + (n_i*sd)+0]+=0.5*t_1;
+				fH_2[(Localid*sd+1)*(nnd*sd) + (n_i*sd)+1]+=0.5*t_1;
+				fH_2[(Localid*sd+2)*(nnd*sd) + (n_i*sd)+2]+=0.5*t_1;
+			}
 		}
 	} //end loop over nodes
 
