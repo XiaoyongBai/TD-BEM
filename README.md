@@ -21,5 +21,5 @@ A Parallel C++ Time-Domain Boundary Element code for elastodynamics analysis of 
 * Example of inputfile can be found in folder named "Geometry"
 
 ### How to do Finite Element - Boundary Element coupling ###
-* Output the boundary element matrices
+* Output the boundary element matrices from the main()
 * Use the FE-BE code to do FE-BE coupling
