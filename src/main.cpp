@@ -57,16 +57,12 @@ int main(int argc, char **args)
 		solver->SetTimeControl(time_step, num_step);
 
 		/*********************************************************************
-		 **
 		 **  Initialize the traction for the zeroth time step
-		 **
 		 *********************************************************************/
 		solver->Initialize();
 
 		/***********************************************************************
-		 **
 		 **  Computation
-		 **
 		 **********************************************************************/
 		try{
 			ElastoDynamicsT* ED=new ElastoDynamicsT(model);
@@ -122,7 +118,7 @@ int main(int argc, char **args)
 
 				solver->SetCurrStep(curr_step);
 
-						solver->UpdateGHLinear(G_0, G_1, H_0, H_1);
+				solver->UpdateGHLinear(G_0, G_1, H_0, H_1);
 
 				solver->SetLoad();
                 
