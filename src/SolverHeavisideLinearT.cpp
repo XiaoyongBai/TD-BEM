@@ -318,22 +318,22 @@ void SolverHeavisideLinearT::Solve_Averaging()
 
 	//fIerr=MatView(fH_Compute, PETSC_VIEWER_STDOUT_WORLD);
 	//cout << "fLoad is"<<endl;
-    //fIerr=VecView(fLoad, PETSC_VIEWER_STDOUT_WORLD);
+    	//fIerr=VecView(fLoad, PETSC_VIEWER_STDOUT_WORLD);
 
 	//cout<<"fRHS is " << endl;
-    //fIerr=VecView(fRHS, PETSC_VIEWER_STDOUT_WORLD);
+    	//fIerr=VecView(fRHS, PETSC_VIEWER_STDOUT_WORLD);
 
 	fIerr=KSPSetOperators(fKsp, fH_Compute, fH_Compute);
 	fIerr=KSPSolve(fKsp, fRHS, result_rough);
-    VecAssemblyBegin(result_rough);
-    VecAssemblyEnd(result_rough);
+    	VecAssemblyBegin(result_rough);
+    	VecAssemblyEnd(result_rough);
 
 	//cout << "result _rough is \n";
-    //VecView(result_rough, PETSC_VIEWER_STDOUT_WORLD);
+    	//VecView(result_rough, PETSC_VIEWER_STDOUT_WORLD);
 
-    int solve_step=fCurrStep-1;
+    	int solve_step=fCurrStep-1;
 
-    fIerr=VecCopy(result_rough, fDis_DB[solve_step]);
+    	fIerr=VecCopy(result_rough, fDis_DB[solve_step]);
 	fIerr=VecSetValues(fDis_DB[solve_step], UBC_num, UBC_DOFs, UBC_Values, INSERT_VALUES);
 	fIerr=VecAssemblyBegin(fDis_DB[solve_step]);
 	fIerr=VecAssemblyEnd(fDis_DB[solve_step]);
