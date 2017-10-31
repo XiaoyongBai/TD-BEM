@@ -129,12 +129,12 @@ private:
 	 * boundary conditions
 	 */
 	int fUBC_num;
-    int* fUBC_DOFs;
-    double* fUBC_Values;
+    	int* fUBC_DOFs;
+    	double* fUBC_Values;
 
 	int fFBC_num;
-    int* fFBC_DOFs;
-    double* fFBC_Values;
+    	int* fFBC_DOFs;
+    	double* fFBC_Values;
 };
 
 
