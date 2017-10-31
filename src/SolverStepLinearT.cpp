@@ -47,7 +47,7 @@ void SolverStepLinearT::Initialize()
 
 	//fIerr=VecSetValues(fTrac_DB[0], FBC_num, FBC_DOFs, FBC_Values, INSERT_VALUES);
     
-    VecSet(fTrac_DB[0], 0);
+    	VecSet(fTrac_DB[0], 0);
 	fIerr=VecAssemblyBegin(fTrac_DB[0]);
 	fIerr=VecAssemblyEnd(fTrac_DB[0]);
 
@@ -57,8 +57,7 @@ void SolverStepLinearT::Initialize()
 
 void SolverStepLinearT::UpdateGHLinear(const double* G_0, const double* G_1, const double* H_0, const double* H_1)
 {
-
-    SolverT::UpdateGHLinear(G_0, G_1, H_0, H_1);
+	SolverT::UpdateGHLinear(G_0, G_1, H_0, H_1);
 
 	/*************
 	 * Arrange the matrices
@@ -259,21 +258,20 @@ void SolverStepLinearT::Solve_Direct()
 	//cout <<"fH_Compute is \n";
 	//fIerr=MatView(fH_Compute, PETSC_VIEWER_STDOUT_WORLD);
 	//cout << "fLoad is"<<endl;
-    //fIerr=VecView(fLoad, PETSC_VIEWER_STDOUT_WORLD);
+    	//fIerr=VecView(fLoad, PETSC_VIEWER_STDOUT_WORLD);
 
 	//cout<<"fRHS is " << endl;
-    //fIerr=VecView(fRHS, PETSC_VIEWER_STDOUT_WORLD);
+    	//fIerr=VecView(fRHS, PETSC_VIEWER_STDOUT_WORLD);
 
 	fIerr=KSPSetOperators(fKsp, fH_Compute, fH_Compute);
 	fIerr=KSPSolve(fKsp, fRHS, result_rough);
-    VecAssemblyBegin(result_rough);
-    VecAssemblyEnd(result_rough);
+    	VecAssemblyBegin(result_rough);
+    	VecAssemblyEnd(result_rough);
 
-    //cout << "result _rough is \n";
-    //VecView(result_rough, PETSC_VIEWER_STDOUT_WORLD);
+	//cout << "result _rough is \n";
+	//VecView(result_rough, PETSC_VIEWER_STDOUT_WORLD);
 
-
-    fIerr=VecCopy(result_rough, fDis_DB[fCurrStep]);
+	fIerr=VecCopy(result_rough, fDis_DB[fCurrStep]);
 	fIerr=VecSetValues(fDis_DB[fCurrStep], UBC_num, UBC_DOFs, UBC_Values, INSERT_VALUES);
 	fIerr=VecAssemblyBegin(fDis_DB[fCurrStep]);
 	fIerr=VecAssemblyEnd(fDis_DB[fCurrStep]);
@@ -305,7 +303,7 @@ void SolverStepLinearT::Solve_Direct()
 
 	delete[] FBC_Values_temp;
 
-    //fIerr=VecView(fDis_DB[fCurrStep], PETSC_VIEWER_STDOUT_WORLD);
+    	//fIerr=VecView(fDis_DB[fCurrStep], PETSC_VIEWER_STDOUT_WORLD);
 	//fIerr=MatMult(fH_Compute, result_rough, fRHS);
 }
 
@@ -315,13 +313,13 @@ void SolverStepLinearT::Solve_Direct()
 
 void SolverStepLinearT::Solve_Averaging(double a1, double a2)
 {
-    double a3;
-    if (a1>=0 && a1<=1 && a2>=0 && a2<1 && a1+a2<=1) {
-        a3=1-a1-a2;
-    }else{
-        cout <<"alpha_1="<<a1 <<" alpha_2=" << a2 <<endl;
-        throw "Alpha is out of range";
-    }
+	double a3;
+    	if (a1>=0 && a1<=1 && a2>=0 && a2<1 && a1+a2<=1) {
+        	a3=1-a1-a2;
+    	}else{
+        	cout <<"alpha_1="<<a1 <<" alpha_2=" << a2 <<endl;
+        	throw "Alpha is out of range";
+    	}
     
     
 	int UBC_num;
@@ -333,8 +331,8 @@ void SolverStepLinearT::Solve_Averaging(double a1, double a2)
 
 	fModel->BoundaryCondition_Local(UBC_num, &UBC_DOFs, &UBC_Values, FBC_num, &FBC_DOFs, &FBC_Values);
 
-    double curr_time=(fCurrStep-1)*fDt;
-    double amp=LoadTimeVariation(curr_time);
+    	double curr_time=(fCurrStep-1)*fDt;
+    	double amp=LoadTimeVariation(curr_time);
 
 	double* FBC_Values_temp=new double[FBC_num];
 	MathOperationT::MemCopy(FBC_num, FBC_Values, FBC_Values_temp);
@@ -346,7 +344,7 @@ void SolverStepLinearT::Solve_Averaging(double a1, double a2)
 	//MathOperationT::PrintVector(UBC_num, UBC_Values, "solver UBC_values");
 	//MathOperationT::PrintVector(FBC_num, FBC_Values, "solver FBC_values");
 
-    int solve_step=fCurrStep-1;
+    	int solve_step=fCurrStep-1;
     
 	if(fCurrStep==1)
 	{
@@ -404,67 +402,67 @@ void SolverStepLinearT::Solve_Averaging(double a1, double a2)
 		//MatView(fG_Compute, PETSC_VIEWER_STDOUT_WORLD);
 		//VecView(fLoad, PETSC_VIEWER_STDOUT_WORLD);
 
-        Mat matrix_temp;
-        fIerr=MatConvert(fH_DB[0], MATSAME, MAT_INITIAL_MATRIX, &matrix_temp);
+		Mat matrix_temp;
+		fIerr=MatConvert(fH_DB[0], MATSAME, MAT_INITIAL_MATRIX, &matrix_temp);
         
 		//*** add terms from Eqn M+1
-        fIerr=MatZeroEntries(matrix_temp);
-        MatAXPY(matrix_temp, a1, fH_DB[2],DIFFERENT_NONZERO_PATTERN);
-        MatAXPY(matrix_temp, -a1, fH_DB[0],DIFFERENT_NONZERO_PATTERN);
-        MatScale(matrix_temp, -1);
-        MatMultAdd(matrix_temp, fDis_DB[solve_step-1],fRHS, fRHS);
+		fIerr=MatZeroEntries(matrix_temp);
+		MatAXPY(matrix_temp, a1, fH_DB[2],DIFFERENT_NONZERO_PATTERN);
+		MatAXPY(matrix_temp, -a1, fH_DB[0],DIFFERENT_NONZERO_PATTERN);
+		MatScale(matrix_temp, -1);
+		MatMultAdd(matrix_temp, fDis_DB[solve_step-1],fRHS, fRHS);
 
-        fIerr=MatZeroEntries(matrix_temp);
-        MatAXPY(matrix_temp, a1, fG_DB[2],DIFFERENT_NONZERO_PATTERN);
-        MatAXPY(matrix_temp, -a1, fG_DB[0],DIFFERENT_NONZERO_PATTERN);
-        MatMultAdd(matrix_temp, fTrac_DB[solve_step-1],fRHS, fRHS);
+		fIerr=MatZeroEntries(matrix_temp);
+		MatAXPY(matrix_temp, a1, fG_DB[2],DIFFERENT_NONZERO_PATTERN);
+		MatAXPY(matrix_temp, -a1, fG_DB[0],DIFFERENT_NONZERO_PATTERN);
+		MatMultAdd(matrix_temp, fTrac_DB[solve_step-1],fRHS, fRHS);
         
 		for(int f_i=3; f_i<=min(solve_step+1, fMaxStep); f_i++)
 		{
-            fIerr=MatZeroEntries(matrix_temp);
-            fIerr=MatAXPY(matrix_temp, a1, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
-            fIerr=MatScale(matrix_temp, -1);
-            fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step+1-f_i],fRHS, fRHS);
+			fIerr=MatZeroEntries(matrix_temp);
+		    	fIerr=MatAXPY(matrix_temp, a1, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+		    	fIerr=MatScale(matrix_temp, -1);
+		    	fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step+1-f_i],fRHS, fRHS);
             
 			fIerr=MatZeroEntries(matrix_temp);
 			fIerr=MatAXPY(matrix_temp, a1, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
 			fIerr=MatMultAdd(matrix_temp, fTrac_DB[solve_step+1-f_i],fRHS, fRHS);
 		}
 
-        //*** add terms from Eqn M
+        	//*** add terms from Eqn M
 		for(int f_i=1; f_i<=min(solve_step-1, fMaxStep); f_i++)
 		{
-            fIerr=MatZeroEntries(matrix_temp);
-            fIerr=MatAXPY(matrix_temp, a3, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
-            fIerr=MatScale(matrix_temp, -1);
-            fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-f_i],fRHS, fRHS);
+            		fIerr=MatZeroEntries(matrix_temp);
+            		fIerr=MatAXPY(matrix_temp, a3, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+            		fIerr=MatScale(matrix_temp, -1);
+            		fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-f_i],fRHS, fRHS);
             
 			fIerr=MatZeroEntries(matrix_temp);
 			fIerr=MatAXPY(matrix_temp, a3, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
 			fIerr=MatMultAdd(matrix_temp, fTrac_DB[solve_step-f_i],fRHS, fRHS);
 		}
         
-        //special treatment to the first step
-        if (solve_step<fMaxStep) {
-            fIerr=MatZeroEntries(matrix_temp);
-            fIerr=MatAXPY(matrix_temp, a3, fH_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
-            fIerr=MatScale(matrix_temp, -1);
-            fIerr=MatMultAdd(matrix_temp, fDis_DB[0],fRHS, fRHS);
-            
-            fIerr=MatZeroEntries(matrix_temp);
-            fIerr=MatAXPY(matrix_temp, a3, fG_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
-            fIerr=MatMultAdd(matrix_temp, fTrac_DB[0],fRHS, fRHS);
-        }
+		//special treatment to the first step
+		if (solve_step<fMaxStep) {
+		    	fIerr=MatZeroEntries(matrix_temp);
+		    	fIerr=MatAXPY(matrix_temp, a3, fH_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
+		    	fIerr=MatScale(matrix_temp, -1);
+		    	fIerr=MatMultAdd(matrix_temp, fDis_DB[0],fRHS, fRHS);
+
+		    	fIerr=MatZeroEntries(matrix_temp);
+		    	fIerr=MatAXPY(matrix_temp, a3, fG_DB_bgn[1],DIFFERENT_NONZERO_PATTERN);
+		    	fIerr=MatMultAdd(matrix_temp, fTrac_DB[0],fRHS, fRHS);
+		}
 
         
 
-        //*** add terms from Eqn M-1
+        	//*** add terms from Eqn M-1
 		for(int f_i=0; f_i<=min(solve_step-2, fMaxStep); f_i++)
 		{
-            fIerr=MatZeroEntries(matrix_temp);
-            fIerr=MatAXPY(matrix_temp, a2, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
-            fIerr=MatScale(matrix_temp, -1);
-            fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-1-f_i],fRHS, fRHS);
+ 	        	fIerr=MatZeroEntries(matrix_temp);
+            		fIerr=MatAXPY(matrix_temp, a2, fH_DB[f_i],DIFFERENT_NONZERO_PATTERN);
+            		fIerr=MatScale(matrix_temp, -1);
+            		fIerr=MatMultAdd(matrix_temp, fDis_DB[solve_step-1-f_i],fRHS, fRHS);
             
 			fIerr=MatZeroEntries(matrix_temp);
 			fIerr=MatAXPY(matrix_temp, a2, fG_DB[f_i],DIFFERENT_NONZERO_PATTERN);
@@ -472,16 +470,16 @@ void SolverStepLinearT::Solve_Averaging(double a1, double a2)
 		}
 
 		// special treatment to the first step
-        if (solve_step-1<fMaxStep) {
-            fIerr=MatZeroEntries(matrix_temp);
-            fIerr=MatAXPY(matrix_temp, a2, fH_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
-            fIerr=MatScale(matrix_temp, -1);
-            fIerr=MatMultAdd(matrix_temp, fDis_DB[0],fRHS, fRHS);
+        	if (solve_step-1<fMaxStep) {
+            		fIerr=MatZeroEntries(matrix_temp);
+            		fIerr=MatAXPY(matrix_temp, a2, fH_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
+            		fIerr=MatScale(matrix_temp, -1);
+            		fIerr=MatMultAdd(matrix_temp, fDis_DB[0],fRHS, fRHS);
             
-            fIerr=MatZeroEntries(matrix_temp);
-            fIerr=MatAXPY(matrix_temp, a2, fG_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
-            fIerr=MatMultAdd(matrix_temp, fTrac_DB[0],fRHS, fRHS);
-        }
+            		fIerr=MatZeroEntries(matrix_temp);
+            		fIerr=MatAXPY(matrix_temp, a2, fG_DB_bgn[2],DIFFERENT_NONZERO_PATTERN);
+            		fIerr=MatMultAdd(matrix_temp, fTrac_DB[0],fRHS, fRHS);
+        	}
 
 
 
@@ -500,18 +498,18 @@ void SolverStepLinearT::Solve_Averaging(double a1, double a2)
     	//fIerr=VecView(fLoad, PETSC_VIEWER_STDOUT_WORLD);
 
 	//cout<<"fRHS is " << endl;
-    //fIerr=VecView(fRHS, PETSC_VIEWER_STDOUT_WORLD);
+    	//fIerr=VecView(fRHS, PETSC_VIEWER_STDOUT_WORLD);
 
 	fIerr=KSPSetOperators(fKsp, fH_Compute, fH_Compute);
 	fIerr=KSPSolve(fKsp, fRHS, result_rough);
-    VecAssemblyBegin(result_rough);
-    VecAssemblyEnd(result_rough);
+    	VecAssemblyBegin(result_rough);
+    	VecAssemblyEnd(result_rough);
 
-    //cout << "result _rough is \n";
-    //VecView(result_rough, PETSC_VIEWER_STDOUT_WORLD);
+    	//cout << "result _rough is \n";
+    	//VecView(result_rough, PETSC_VIEWER_STDOUT_WORLD);
 
 
-    fIerr=VecCopy(result_rough, fDis_DB[solve_step]);
+    	fIerr=VecCopy(result_rough, fDis_DB[solve_step]);
 	fIerr=VecSetValues(fDis_DB[solve_step], UBC_num, UBC_DOFs, UBC_Values, INSERT_VALUES);
 	fIerr=VecAssemblyBegin(fDis_DB[solve_step]);
 	fIerr=VecAssemblyEnd(fDis_DB[solve_step]);
